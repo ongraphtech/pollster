@@ -1,0 +1,23 @@
+<div class="container">
+    <div class="page-header">
+        <h1>Polls</h1>
+    </div>
+    <alert level="{{message.level}}" text="{{message.text}}"/>
+    <table class="table table-bordered table-striped">
+        <thead>
+        <tr>
+            <th>Status String</th>
+            <th>Down Vote</th>
+            <th>Up Vote</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr ng-class-odd="'odd'" ng-class-even="'even'" data-ng-repeat="item in list" data-ng-click="show(item)">
+            <td>{{item.statusString}}</td>
+            <td>{{item.downVote}}</td>
+            <td>{{item.upVote}}</td>
+        </tr>
+        </tbody>
+    </table>
+    <div class="pagination pagination-centered" data-pagination data-total="total"></div>
+</div>

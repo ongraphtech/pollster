@@ -1,0 +1,35 @@
+<div class="container100W">
+    <alert level="{{message.level}}" text="{{message.text}}"/>
+    <div class="page-header">
+        <h1>Trending Polls</h1>
+    </div>
+    <div class="pagination minheight490px">
+        <ul id="nav_secondary">
+            <li data-ng-repeat="item in list.allList">
+                <span>
+                    <a data-ng-click="display(item)" rel="external">
+                        {{item.statusString | cut:true:500:' ...'}}
+                    </a>
+                    <div>
+                        <span data-ng-click="vote(-1, item.id)" class="actionSpan">
+                        <i class="icon-thumbs-down"></i>{{item.downVote}}
+                          </span>&nbsp;<span data-ng-click="vote(1, item.id)" style="cursor:pointer;margin-left:5px;">
+                        <i class="icon-thumbs-up"></i> {{item.upVote}}
+                        </span>
+
+                    </div>
+                </span>
+            </li>
+        </ul>
+        <div class="activityDiv">
+            <span class="recentHead">Recent Updates</span>
+
+            <div class="updateDiv">
+                <span data-ng-repeat="item in list.recentList" data-ng-click="display(item)" class="activityBlock">
+                           {{item.postedBy}} posted
+                    <b >{{item.statusString | cut:true:85:' ...'}}</b>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
