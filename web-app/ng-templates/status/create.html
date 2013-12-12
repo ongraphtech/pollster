@@ -1,22 +1,46 @@
 <div class="container">
-<div class="page-header">
-	<h1>Create New Poll</h1>
-</div>
-<alert level="{{message.level}}" text="{{message.text}}"/>
-<form name="form" data-ng-submit="save(item)" class="form-horizontal">
+    <div class="page-header">
+        <h1>Create New Poll</h1>
+    </div>
+    <alert level="{{message.level}}" text="{{message.text}}"/>
+    <form name="form" data-ng-submit="save(item)" class="form-horizontal">
 
-	<div class="control-group" data-ng-class="{error: errors.statusString}">
-		<label class="control-label" for="statusString">Status String</label>
-		<div class="controls">
-			<input data-ng-maxlength="250" style="width:680px" type="text" id="statusString" name="statusString" required data-ng-model="item.statusString">
-			<span class="help-inline" data-ng-show="errors.statusString">{{errors.statusString}}</span>
-            <span style="color:red" class="error" ng-show="form.statusString.$error.maxlength">Too long!</span>
-		</div>
-	</div>
+        <div class="control-group" data-ng-class="{error: errors.statusString}">
+            <label class="control-label" for="statusString">Status String</label>
 
-	<div class="form-actions">
-		<button type="submit" class="btn btn-primary" data-ng-disabled="form.$invalid"><i class="icon-ok"></i> Create</button>
-	</div>
-</form>
+            <div class="controls">
+                <input data-ng-maxlength="250" style="width:680px" type="text" id="statusString" name="statusString"
+                       required data-ng-model="item.statusString">
+                <span class="help-inline" data-ng-show="errors.statusString">{{errors.statusString}}</span>
+                <span style="color:red" class="error" ng-show="form.statusString.$error.maxlength">Too long!</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label class="control-label" for="statusString">Add options</label>
+
+            <div class="controls">
+                <input type="text" ng-model="optionText" size="30" placeholder="Add Polls option here">
+                <button type="button" class="btn" ng-click="addOption()">
+                    Add
+                </button>
+            </div>
+        </div>
+        <input type="hidden" name="options" value="{{item.options}}"/>
+        <div class="control-group" data-ng-show="item.options.length">
+            <label class="control-label" for="statusString">Added options</label>
+            <div class="controls">
+                <div class="optionDiv" ng-repeat="option in item.options">
+                    <span>{{option.text}}</span> <i ng-click="deleteOption($index)" title="Remove Option" class="icon-remove"></i>
+                </div>
+        </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary" data-ng-disabled="form.$invalid"><i class="icon-ok"></i>
+                Create
+            </button>
+        </div>
+    </form>
 </div>
 </div>

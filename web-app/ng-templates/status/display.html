@@ -1,23 +1,43 @@
 <div class="container">
+    <div data-ng-show="item.message" style="width: 455px;top:108px;position:absolute" class="alert alert-success">
+        <strong>Well done!</strong> {{item.message}}.
+    </div>
     <alert level="{{message.level}}" text="{{message.text}}"/>
     <dl class="dl-horizontal">
-
         <h1 data-ng-bind="item.statusString"></h1>
-
         <form name="myForm">
             <div class="control-group">
                 <label class="control-label">Invite User By Email</label>
-
                 <div class="controls">
-                    <input type="email" name="input" ng-model="inviteemail" required style="margin-bottom:0px;">
+                    <input type="email" name="input" ng-model="inviteEmail" required style="margin-bottom:0px;">
                       <span class="error" ng-show="myForm.input.$valid">
-            <button data-ng-click="invite()" data-ng-disabled="form.$invalid" class="btn btn-primary" type="button">
-                Invite
-            </button>
-      </span>
+                        <button data-ng-click="invite()" data-ng-disabled="form.$invalid"
+                                class="btn btn-primary" type="button">Invite
+                        </button>
+                      </span>
                 </div>
             </div>
         </form>
+
+        <div class="control-group" data-ng-show="statusOptions.length">
+            <label class="control-label">Please select your option</label>
+            <div class="controls">
+                <div ng-repeat="option in statusOptions">
+                    <input class="radioDiv" ng-click="submitSelection(option.id)"  name="optionRadio" type="radio" value="option.id" >{{option.statusText}}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 25px;">
+            <label class="control-label">Add your own options</label>
+
+            <div class="controls">
+                <input type="text" ng-model="optionText" size="30" placeholder="Add your own option here">
+                <button type="button" class="btn" ng-click="addOption(optionText)" style="margin-top:-10px;">
+                    Add
+                </button>
+            </div>
+        </div>
     </dl>
     <div>
         <div style="float: left; width: 400px" ng:model="data"
@@ -32,9 +52,11 @@
     </div>
     <div class="form-actions">
         <div style="margin-top:65px;">
-            <button data-ng-click="vote(-1)" class="btn btn-danger" type="button"><i class="icon-thumbs-down"></i> Dislike
+            <button data-ng-click="vote(-1)" class="btn btn-danger" type="button"><i class="icon-thumbs-down"></i>
+                Dislike
             </button>
-            <button data-ng-click="vote(1)" class="btn btn-success" type="button"><i class="icon-thumbs-up"></i> Like</button>
+            <button data-ng-click="vote(1)" class="btn btn-success" type="button"><i class="icon-thumbs-up"></i> Like
+            </button>
         </div>
     </div>
 </div>

@@ -755,3 +755,17 @@ tr {
     float: left;
     margin-left: 110px;
 }
+
+.optionDiv i{
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.optionDiv {
+    margin: 5px;
+}
+
+.radioDiv{
+    float:left;
+    margin-right:5px !important;
+}

@@ -8,6 +8,12 @@ class Status {
     Date dateCreated
     Date lastUpdated
 
+    static hasMany = [statusOptions: StatusOption, pollOpinions: PollOpinion]
+
+    static mapping = {
+        statusOptions sort: 'id', order: 'asc'
+    }
+
     static constraints = {
         statusString(blank: false, nullable: false)
         postedBy(blank: false, nullable: false)

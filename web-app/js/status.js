@@ -141,41 +141,68 @@ function loginCtrl($scope, $http, $cookieStore, $location, $rootScope) {
 }
 
 function displayCtrl($scope, $routeParams, $location, Grails, Flash, $http, $timeout) {
+    var status = $routeParams.id
     $scope.message = Flash.getMessage();
-    getData();
     setTimer();
+    Grails.display({id:$routeParams.id}, function (item) {
+        $scope.item = item.status;
+        $scope.statusOptions = item.statusOptions;
+        $scope.data = getArray(item.dtaList);     // [['yes',1],['no',1]]; //
+    }, errorHandler.curry($scope, $location, Flash));
     function getData() {
-        Grails.display({id:$routeParams.id}, function (item) {
-            $scope.item = item;
-            $scope.data = [
-                ['Like', item.upVote],
-                ['Dislike', item.downVote]
-            ];
-        }, errorHandler.curry($scope, $location, Flash));
+        $http.get('/pollster/status/pollForChart?id=' + status).success(function (data) {
+            $scope.data = getArray(data);
+        });
     }
 
     function setTimer() {
         timeout = $timeout(function () {
             getData();
             setTimer();
-        }, 500);
+        }, 1000);
     }
 
     $scope.invite = function (item) {
-        $http.get('/pollster/status/inviteUser?email=' + $scope.inviteemail + '&id=' + $scope.item.id + '').success(function (data) {
-            $scope.inviteemail = '';
+        $http.get('/pollster/status/inviteUser?email=' + $scope.inviteEmail + '&id=' + $scope.item.id + '').success(function (data) {
+            $scope.inviteEmail = '';
         });
     };
 
     $scope.vote = function (val) {
         $http.get('/pollster/status/rateStatus?statusVote=' + val + '&id=' + $scope.item.id + '').success(function (data) {
-            $scope.inviteemail = '';
+            $scope.inviteEmail = '';
         });
     };
 
     $scope.$on('$destroy', function () {
         $timeout.cancel(timeout);
     });
+
+    $scope.submitSelection = function (val) {
+        $http.get('/pollster/status/lockOption?optionId=' + val + '&id=' + $scope.item.id + '').success(function (data) {
+            $scope.item.message = data.message;
+            $timeout(function () {
+                $scope.item.message = '';
+            }, 1000);
+        });
+    };
+
+    function getArray(dtaList) {
+        var newData = [];
+        jQuery.each(dtaList, function (index, value) {
+            jQuery.each(value, function (key, value) {
+                newData.push([key, value]);
+            });
+        });
+        return newData;
+    }
+
+    $scope.addOption = function (optionText) {
+        $http.get('/pollster/status/addCustomOption?optionText=' + optionText + '&id=' + status + '').success(function (data) {
+            $scope.optionText = '';
+            $scope.statusOptions = data;
+        });
+    };
 }
 
 function ShowCtrl($scope, $routeParams, $location, Grails, Flash) {
@@ -195,11 +222,24 @@ function ShowCtrl($scope, $routeParams, $location, Grails, Flash) {
 
 function CreateCtrl($scope, $location, Grails, Flash) {
     $scope.item = new Grails;
+
+    $scope.item.options = [];
     $scope.save = function (item) {
         item.$save(function (response) {
             Flash.success(response.message);
             $location.path('/show/' + response.id);
         }, errorHandler.curry($scope, $location, Flash));
+    };
+
+    $scope.addOption = function () {
+        if ($scope.optionText) {
+            $scope.item.options.push({text:$scope.optionText});
+            $scope.optionText = '';
+        }
+    };
+
+    $scope.deleteOption = function (index) {
+        $scope.item.options.splice(index, 1);
     };
 }
 

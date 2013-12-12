@@ -5,6 +5,8 @@ class BootStrap {
     def init = { servletContext ->
           bootstrapService.createUser()
           bootstrapService.createStatus()
+          bootstrapService.createOptions()
+          bootstrapService.createPollOpenion()
     }
     def destroy = {
     }

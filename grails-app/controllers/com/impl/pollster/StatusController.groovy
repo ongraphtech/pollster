@@ -20,16 +20,22 @@ class StatusController {
     }
 
     def save() {
-        def statusInstance = new Status(request.JSON)
-        statusInstance.postedBy = session?.user?.name
-        def responseJson = [:]
-        if (statusInstance.save(flush: true)) {
+        Status status = new Status(request.JSON)
+        status.postedBy = session?.user?.name
+        Map responseJson = [:]
+        if (status.save(flush: true)) {
+            request.JSON.options.each {
+                StatusOption statusOption = StatusOption.findByStatusAndStatusText(status, it.text.trim())
+                if (!statusOption) {
+                    new StatusOption(statusText: it.text, status: status).save(flush: true)
+                }
+            }
             response.status = SC_CREATED
-            responseJson.id = statusInstance.id
-            responseJson.message = message(code: 'default.created.message', args: [message(code: 'status.label', default: 'Status'), statusInstance.id])
+            responseJson.id = status.id
+            responseJson.message = message(code: 'default.created.message', args: [message(code: 'status.label', default: 'Status'), status.id])
         } else {
             response.status = SC_UNPROCESSABLE_ENTITY
-            responseJson.errors = statusInstance.errors.fieldErrors.collectEntries {
+            responseJson.errors = status.errors.fieldErrors.collectEntries {
                 [(it.field): message(error: it)]
             }
         }
@@ -37,23 +43,23 @@ class StatusController {
     }
 
     def fetch() {
-        def statusInstance = Status.get(params.id)
-        if (statusInstance) {
-            render statusInstance as JSON
+        Status status = Status.get(params.id)
+        if (status) {
+            render status as JSON
         } else {
             notFound params.id
         }
     }
 
     def update() {
-        def statusInstance = Status.get(params.id)
-        if (!statusInstance) {
+        Status status = Status.get(params.id)
+        if (!status) {
             notFound params.id
             return
         }
-        def responseJson = [:]
+        Map responseJson = [:]
         if (request.JSON.version != null) {
-            if (statusInstance.version > request.JSON.version) {
+            if (status.version > request.JSON.version) {
                 response.status = SC_CONFLICT
                 responseJson.message = message(code: 'default.optimistic.locking.failure',
                         args: [message(code: 'status.label', default: 'Status')],
@@ -64,15 +70,15 @@ class StatusController {
             }
         }
 
-        statusInstance.properties = request.JSON
+        status.properties = request.JSON
 
-        if (statusInstance.save(flush: true)) {
+        if (status.save(flush: true)) {
             response.status = SC_OK
-            responseJson.id = statusInstance.id
-            responseJson.message = message(code: 'default.updated.message', args: [message(code: 'status.label', default: 'Status'), statusInstance.id])
+            responseJson.id = status.id
+            responseJson.message = message(code: 'default.updated.message', args: [message(code: 'status.label', default: 'Status'), status.id])
         } else {
             response.status = SC_UNPROCESSABLE_ENTITY
-            responseJson.errors = statusInstance.errors.fieldErrors.collectEntries {
+            responseJson.errors = status.errors.fieldErrors.collectEntries {
                 [(it.field): message(error: it)]
             }
         }
@@ -81,15 +87,15 @@ class StatusController {
     }
 
     def delete() {
-        def statusInstance = Status.get(params.id)
-        if (!statusInstance) {
+        Status status = Status.get(params.id)
+        if (!status) {
             notFound params.id
             return
         }
 
-        def responseJson = [:]
+        Map responseJson = [:]
         try {
-            statusInstance.delete(flush: true)
+            status.delete(flush: true)
             responseJson.message = message(code: 'default.deleted.message', args: [message(code: 'status.label', default: 'Status'), params.id])
         } catch (DataIntegrityViolationException e) {
             response.status = SC_CONFLICT
@@ -100,14 +106,24 @@ class StatusController {
 
     private void notFound(id) {
         response.status = SC_NOT_FOUND
-        def responseJson = [message: message(code: 'default.not.found.message', args: [message(code: 'status.label', default: 'Status'), params.id])]
+        Map responseJson = [message: message(code: 'default.not.found.message', args: [message(code: 'status.label', default: 'Status'), params.id])]
         render responseJson as JSON
     }
 
     def display() {
-        def statusInstance = Status.get(params.id)
-        if (statusInstance) {
-            render statusInstance as JSON
+        Status status = Status.get(params.id)
+        if (status) {
+            List<Map> dtaList = []
+            Map mapForchart = [:]
+            status.statusOptions.sort {it.id}.each {StatusOption option ->
+                mapForchart.put(option.statusText, PollOpinion.countByStatusOption(option))
+                dtaList << mapForchart
+                mapForchart = [:]
+            }
+            mapForchart = [status: status, dtaList: dtaList, statusOptions: status.statusOptions.sort {it.id}]
+            JSON.use('deep') {
+                render mapForchart as JSON
+            }
         } else {
             notFound params.id
         }
@@ -132,10 +148,10 @@ class StatusController {
     }
 
     def board() {
-       List<Status>  allList = Status.list(sort: "upVote", order: "desc")
-       List<Status>  recentList   = Status.list(sort: "lastUpdated", order: "desc",max: 10)
-       Map myMap = [allList:allList,recentList:recentList]
-       render myMap as JSON
+        List<Status> allList = Status.list(sort: "upVote", order: "desc")
+        List<Status> recentList = Status.list(sort: "lastUpdated", order: "desc", max: 10)
+        Map myMap = [allList: allList, recentList: recentList]
+        render myMap as JSON
     }
 
     def login() {
@@ -148,21 +164,61 @@ class StatusController {
         render data as JSON
     }
 
-    def logout(){
+    def logout() {
         Map data = [isUserLogin: false]
         session.invalidate()
         render data as JSON
     }
 
-    def autoLoginByCookie(){
+    def autoLoginByCookie() {
         Map data = [isUserExist: false]
-        if(!session.user){
+        if (!session.user) {
             User user = User.get(params.id)
-            if (user){
+            if (user) {
                 session.user = user
                 data = [isUserExist: true]
             }
         }
         render data as JSON
+    }
+
+    def lockOption() {
+        Map data = [message: "You have successfully locked your choice"]
+        StatusOption statusOption = StatusOption.get(params.optionId)
+        Status status = Status.get(params.id)
+        PollOpinion pollOpinion = PollOpinion.findByUserAndStatus(session.user, status)
+        if (pollOpinion) {
+            pollOpinion.statusOption = statusOption
+            data = [message: "You have successfully updated your choice"]
+        }
+        else {
+            pollOpinion = new PollOpinion(user: session.user, status: status, statusOption: statusOption)
+        }
+        pollOpinion.save(flush: true)
+        render data as JSON
+    }
+
+    def pollForChart() {
+        List<Map> dtaList = []
+        Map mapForchart = [:]
+        Status status = Status.get(params.id)
+        status.statusOptions.sort {it.id}.each {StatusOption option ->
+            mapForchart.put(option.statusText, PollOpinion.countByStatusOption(option))
+            dtaList << mapForchart
+            mapForchart = [:]
+        }
+        render dtaList as JSON
+    }
+
+
+    def addCustomOption() {
+        String optionText = params.optionText.trim()
+        Status status = Status.get(params.id)
+        StatusOption statusOption = StatusOption.findByStatusAndStatusText(status, optionText)
+        if (!statusOption) {
+            new StatusOption(statusText: optionText, status: status).save(flush: true)
+        }
+        status.refresh()
+        render status.statusOptions.sort {it.id} as JSON
     }
 }
